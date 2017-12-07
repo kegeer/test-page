@@ -1,0 +1,63 @@
+@import "~antd/lib/style/themes/default.less";
+
+.listContent {
+  .description {
+    margin: 12px 0;
+    line-height:22px;
+    max-width: 720px;
+    font-size: 1rem;
+  }
+  .papersList {
+    color: @text-color-secondary;
+    font-size: 0.8rem;
+    span {
+      padding: 6px 12px;
+      border: 1px solid @text-color-secondary;
+      border-radius: 5px;
+      &:hover {
+        background-color: @text-color-secondary;
+        border: none;
+        a {
+          color: white;
+        }
+      }
+      a {
+        padding-left: 16px;
+        text-decoration: none;
+      }
+    }
+  }
+  .extra {
+    color: @text-color-secondary;
+    margin: 16px 0;
+    line-height: 22px;
+    & > .ant-avatar {
+      vertical-align: top;
+      margin-right:8px;
+      //width: 30px;
+      //height: 30px;
+      position: relative;
+      top: 1px;
+    }
+    .meta {
+      display: inline-block;
+      & > em {
+        display: block;
+        color: @disabled-color;
+        font-style: normal;
+      }
+    }
+  }
+}
+
+a.listItemMetaTitle {
+  color: @heading-color;
+}
+.listItemExtra {
+  //width: 272px;
+  //height: 1px;
+  float: right;
+}
+.selfTrigger {
+  margin-left: 12px;
+}
