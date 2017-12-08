@@ -1,4 +1,6 @@
 import React, { Component } from 'react'
+import { connect } from 'react-redux'
+import { withRouter } from 'react-router-dom'
 import PropTypes from 'prop-types'
 import isEqual from 'lodash/isEqual'
 import pick from 'lodash/pick'
@@ -9,8 +11,11 @@ import jquery from 'jquery'
 import rangy from 'rangy/lib/rangy-core'
 import { Col, Row } from 'antd'
 
+import { CommentsList } from 'components'
+import { Comment } from 'containers'
+import { resourceCreateRequest } from 'store/actions'
+
 import Page from './Page'
-import PdfComment from './PdfComment'
 
 require('rangy/lib/rangy-textrange')
 require('rangy/lib/rangy-serializer')
@@ -26,43 +31,77 @@ window.rangy = rangy
 class Viewer extends Component {
   constructor(props) {
     super(props)
+    const { filename } = this.props.match.params
     this.state = {
+      filename,
       lastSelectors: undefined,
       lastSimpleSelection: null,
       selectors: undefined,
-      highlights: [],
       highlightsByPage: {},
       popupTarget: undefined,
       showComment: false,
+      tempHighlightsByPage: {},
+      pageCoordinates: undefined,
     }
     this.onTextSelect = this.onTextSelect.bind(this)
+    this.getPageCoordinates = this.getPageCoordinates.bind(this)
   }
 
   componentDidMount() {
+    this.renderHighlights(this.props.annotations)
     this._pages.addEventListener('mouseup', this.onMouseUp)
+
     this.elements = this._pages.getElementsByClassName('textLayer')
+    this.getPageCoordinates()
   }
+
+
+  componentWillReceiveProps(nextProps) {
+    if (this.props.scale !== nextProps.scale) {
+      this.getPageCoordinates()
+    }
+    if (this.props.annotations.length !== nextProps.annotations.length) {
+      // console.log('high change')
+      this.renderHighlights(nextProps.annotations)
+    }
+  }
+
   componentWillUnmount() {
     this._pages.removeEventListener('mouseup', this.onMouseUp)
   }
+
 
   onMouseUp = () => {
     this.onTextSelect()
   };
 
+  async getPageCoordinates() {
+    const pdfPages = await this._pages.getElementsByClassName('pdf-page')
 
+    const pageCoordinates = {}
+    for (let i = 0; i < this.props.numPages; i++) {
+      if (!pageCoordinates[i]) {
+        pageCoordinates[i] = { offsetTop: 0, sizeHeight: 0 }
+      }
+      pageCoordinates[i].offsetTop = pdfPages[i] ? pdfPages[i].offsetTop : 0
+      pageCoordinates[i].sizeHeight = pdfPages[i] ? pdfPages[i].clientHeight : 0
+      // console.log(pageCoordinates, 'haha size')
+    }
+
+    this.setState({
+      pageCoordinates,
+    })
+    // console.log(this.state.pageCoordinates, 'wow page')
+  }
   onSelect = (selectors) => {
     // only call onSelect output if necessary
     if (isEqual(selectors, this.state.lastSelectors)) return
-
     this.setState({
       lastSelectors: selectors,
       selectors,
       popupTarget: { selectors },
     })
-
-
-    console.log(this.state.selectors, 'haha selectors')
+    this.highlightSelectors()
   };
 
   async onTextSelect() {
@@ -229,119 +268,157 @@ class Viewer extends Component {
     return rects
   };
 
-  // renderHighlights = () => {
-  //   const { highlightsByPage } = this.state
-  //   this.props.highlights.forEach(highlight => {
-  //     if (!highlight.selectors || !highlight.selectors.pdfRectangles) return;
-  //     const pageNumbers = uniq(highlight.selectors.pdfRectangles.map(rect => rect.pageNumber))
-  //     pageNumbers.forEach(pageNumber => {
-  //       if (!highlightsByPage[pageNumber]) {
-  //         highlightsByPage[pageNumber] = [];
-  //       }
-  //       highlightsByPage[pageNumber].push(highlight);
-  //     })
-  //   })
-  //   this.setState({
-  //     highlightsByPage,
-  //   });
-  // }
 
   saveHighlights = (e) => {
-    e.stopPropagation()
+    e.preventDefault()
+    const { selectors } = this.state
+    // console.log(selectors, 'save selectors')
     // this.saveHighlightsToServer(selectors)
-    const { selectors, highlightsByPage } = this.state
-    if (!selectors.pdfRectangles) return
+    if (selectors.pdfRectangles) {
+      try {
+        this.props.saveSelectors({
+          filename: this.state.filename,
+          title: '',
+          body: '',
+          selectors,
+        })
+        this.highlightSelectors()
+      } catch (e) {
+        console.error(e)
+      }
+    }
+  }
+
+  highlightSelectors = () => {
+    const { selectors, tempHighlightsByPage } = this.state
+    if (!selectors || !selectors.pdfRectangles) return
     const pageNumbers = uniq(selectors.pdfRectangles.map(rec => rec.pageNumber))
     pageNumbers.forEach((pageNumber) => {
-      if (!highlightsByPage[pageNumber]) {
-        highlightsByPage[pageNumber] = []
+      if (!tempHighlightsByPage[pageNumber]) {
+        tempHighlightsByPage[pageNumber] = []
       }
-      highlightsByPage[pageNumber].push({ selectors })
+      tempHighlightsByPage[pageNumber].push({ selectors })
+    })
+    this.setState({
+      tempHighlightsByPage,
+    })
+  }
+  commentOnHighlight = (e) => {
+    this.setState({
+      showComment: true,
+    })
+  }
+  closeComment = () => {
+    this.setState({
+      showComment: false,
+      popupTarget: undefined,
+      tempHighlightsByPage: {},
+      selectors: undefined,
+    })
+  }
+
+  clearTempHighlightsByPage = () => {
+    this.setState({
+      tempHighlightsByPage: {},
+    })
+  }
+
+  renderHighlights = (annotations) => {
+    const { highlightsByPage } = this.state
+    // const { annotations } = this.props
+    annotations.forEach((annotation) => {
+      if (!annotation.selectors || !annotation.selectors.pdfRectangles) return
+      const pageNumbers = uniq(annotation.selectors.pdfRectangles.map(rect => rect.pageNumber))
+      pageNumbers.forEach((pageNumber) => {
+        if (!highlightsByPage[pageNumber]) {
+          highlightsByPage[pageNumber] = []
+        }
+        highlightsByPage[pageNumber].push(annotation)
+      })
     })
     this.setState({
       highlightsByPage,
-      popupTarget: undefined,
     })
-    console.log(this.state.highlightsByPage, 'highlightsByPage')
-  };
-  // saveHighlightsToServer = (selectors) => {
-  //   const { filename } = this.props.match.params
-  //   this.props.saveHiglights({
-  //     filename,
-  //     selectors,
-  //   })
-  // }
-  commentOnHighlight = (e) => {
-    this.saveHighlights(e)
-    this.setState({
-      showComment: true,
-      popupTarget: undefined,
-    })
+    // console.log(this.state.highlightsByPage, 'hahahh2hahah2')
   }
+
+
   render() {
     const {
-      pages, rotate, renderType, scale, onPageChange,
+      pages, rotate, renderType, scale, onPageChange, annotations,
     } = this.props
-    const { highlightsByPage, popupTarget, showComment } = this.state
+    const {
+      highlightsByPage, popupTarget, showComment, selectors, filename, pageCoordinates, tempHighlightsByPage,
+    } = this.state
+    // const commentState = !selectors ? this.setState({ showComment: false }) : null
+
     return (
-      <section className="pdf-viewer" ref={div => (this._pages = div)}>
-        {
-              pages.map((page, index) => (
-                <Page
-                  key={index}
-                  page={page}
-                  scale={scale}
-                  rotate={rotate}
-                  renderType={renderType}
-                  onVisibleOnViewport={onPageChange}
-                  highlights={highlightsByPage[page.pageNumber]}
-                  popupTarget={popupTarget}
-                  onSaveHighlight={this.saveHighlights}
-                  commentOnHighlight={this.commentOnHighlight}
-                />
-              ))
-            }
+      <section className="pdf-viewer">
+        <Row>
+          <Col span={18}>
+            <div className="pdf-wrapper" ref={div => (this._pages = div)}>
+              {
+                pages.map((page, index) => (
+                  <Page
+                    key={index}
+                    page={page}
+                    selectors={selectors}
+                    scale={scale}
+                    rotate={rotate}
+                    renderType={renderType}
+                    onVisibleOnViewport={onPageChange}
+                    highlights={highlightsByPage[page.pageNumber]}
+                    tempHighlightsByPage={tempHighlightsByPage[page.pageNumber]}
+                    clearTempHighlightsByPage={this.clearTempHighlightsByPage}
+                    popupTarget={popupTarget}
+                    onSaveHighlight={this.saveHighlights}
+                    commentOnHighlight={this.commentOnHighlight}
+                  />
+                ))
+              }
+            </div>
+          </Col>
+          <Col span={6}>
+            <div className="pdf-sidebar">
+              {
+                pageCoordinates && annotations ?
+                  <CommentsList
+                    annotations={annotations}
+                    pageCoordinates={pageCoordinates}
+                  /> : null
+              }
+              { showComment ? <Comment
+                showComment={showComment}
+                closeComment={this.closeComment}
+                selectors={selectors}
+                filename={filename}
+                highlightSelectors={this.highlightSelectors}
+              /> : null }
+            </div>
+          </Col>
+        </Row>
       </section>
+
+
     )
-    // return (
-    //   <Row>
-    //     <Col span={18}>
-    //       <section className="pdf-viewer" ref={div => (this._pages = div)}>
-    //         {
-    //           pages.map((page, index) => (
-    //             <Page
-    //               key={index}
-    //               page={page}
-    //               scale={scale}
-    //               rotate={rotate}
-    //               renderType={renderType}
-    //               onVisibleOnViewport={onPageChange}
-    //               highlights={highlightsByPage[page.pageNumber]}
-    //               popupTarget={popupTarget}
-    //               onSaveHighlight={this.saveHighlights}
-    //               commentOnHighlight={this.commentOnHighlight}
-    //             />
-    //           ))
-    //         }
-    //       </section>
-    //     </Col>
-    //     <Col span={6}>
-    //       <div className="pdf-sidebar">
-    //         { showComment && <PdfComment /> }
-    //       </div>
-    //     </Col>
-    //   </Row>
-    // )
   }
 }
 
 Viewer.propTypes = {
+  match: PropTypes.object.isRequired,
   pages: PropTypes.array.isRequired,
   rotate: PropTypes.number.isRequired,
   renderType: PropTypes.string.isRequired,
   scale: PropTypes.number.isRequired,
   onPageChange: PropTypes.func.isRequired,
+  saveSelectors: PropTypes.func.isRequired,
+  annotations: PropTypes.arrayOf(PropTypes.any),
+  numPages: PropTypes.number,
 }
 
+const mapDispatchToProps = dispatch => ({
+  saveSelectors: data => dispatch(resourceCreateRequest('annotations', data)),
+})
 
-export default Viewer
+
+export default withRouter(connect(null, mapDispatchToProps)(Viewer))

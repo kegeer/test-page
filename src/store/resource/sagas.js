@@ -1,16 +1,19 @@
 // https://github.com/diegohaz/arc/wiki/Sagas
 // https://github.com/diegohaz/arc/wiki/Example-redux-modules#resource
 import { put, call, takeEvery } from 'redux-saga/effects'
+import { singular } from 'pluralize'
 import * as actions from './actions'
 
 export function* createResource(api, { data }, { resource, thunk }) {
   try {
-    console.log('data', data)
+    // console.log('data', data)
     // https://github.com/diegohaz/arc/wiki/API-service
     const detail = yield call([api, api.post], `/${resource}`, data)
-    console.log('detail', detail)
+    // console.log('detail', detail)
+    const dt = detail[singular(resource)]
+    
     // https://github.com/diegohaz/arc/wiki/Actions#async-actions
-    yield put(actions.resourceCreateSuccess(resource, detail, { data }, thunk))
+    yield put(actions.resourceCreateSuccess(resource, dt, { data }, thunk))
   } catch (e) {
     yield put(actions.resourceCreateFailure(resource, e, { data }, thunk))
   }
@@ -19,9 +22,17 @@ export function* createResource(api, { data }, { resource, thunk }) {
 export function* readResourceList(api, { params }, { resource, thunk }) {
   try {
     const list = yield call([api, api.get], `/${resource}`, { params })
-    console.log(list, 'list')
     const resourceList = list[resource]
-    console.log(resourceList, 'resourceList')
+    yield put(actions.resourceListReadSuccess(resource, resourceList, { params }, thunk))
+  } catch (e) {
+    yield put(actions.resourceListReadFailure(resource, e, { params }, thunk))
+  }
+}
+
+export function* readResourceSubList(api, { needle, params }, { resource, thunk }) {
+  try {
+    const list = yield call([api, api.get], `/${needle}/${resource}`, { params })
+    const resourceList = list[resource]
     yield put(actions.resourceListReadSuccess(resource, resourceList, { params }, thunk))
   } catch (e) {
     yield put(actions.resourceListReadFailure(resource, e, { params }, thunk))
@@ -32,6 +43,7 @@ export function* readResourceDetail(api, { needle }, { resource, thunk }) {
   try {
     const detail = yield call([api, api.get], `/${resource}/${needle}`)
     // console.log(detail, 'detail')
+    // const dt = detail[singular(resource)]
     yield put(actions.resourceDetailReadSuccess(resource, detail, { needle }, thunk))
   } catch (e) {
     yield put(actions.resourceDetailReadFailure(resource, e, { needle }, thunk))
@@ -64,6 +76,11 @@ export function* watchResourceListReadRequest(api, { payload, meta }) {
   yield call(readResourceList, api, payload, meta)
 }
 
+
+export function* watchResourceSubListReadRequest(api, { payload, meta }) {
+  yield call(readResourceSubList, api, payload, meta)
+}
+
 export function* watchResourceDetailReadRequest(api, { payload, meta }) {
   yield call(readResourceDetail, api, payload, meta)
 }
@@ -79,6 +96,7 @@ export function* watchResourceDeleteRequest(api, { payload, meta }) {
 export default function* ({ api }) {
   yield takeEvery(actions.RESOURCE_CREATE_REQUEST, watchResourceCreateRequest, api)
   yield takeEvery(actions.RESOURCE_LIST_READ_REQUEST, watchResourceListReadRequest, api)
+  yield takeEvery(actions.RESOURCE_SUB_LIST_READ_REQUEST, watchResourceSubListReadRequest, api)
   yield takeEvery(actions.RESOURCE_DETAIL_READ_REQUEST, watchResourceDetailReadRequest, api)
   yield takeEvery(actions.RESOURCE_UPDATE_REQUEST, watchResourceUpdateRequest, api)
   yield takeEvery(actions.RESOURCE_DELETE_REQUEST, watchResourceDeleteRequest, api)

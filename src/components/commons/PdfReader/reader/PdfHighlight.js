@@ -1,6 +1,6 @@
-import React from 'react';
-import PropTypes from 'prop-types';
-import classNames from 'classnames';
+import React from 'react'
+import PropTypes from 'prop-types'
+import classNames from 'classnames'
 
 
 const propTypes = {
@@ -10,11 +10,11 @@ const propTypes = {
   // onMouseenterHg: PropTypes.func,
   // onMouseleaveHg: PropTypes.func,
   onClickHighlight: PropTypes.func,
-};
+}
 
 const defaultProps = {
   emphasized: false,
-};
+}
 
 const PdfHighlight = (props) => {
   const {
@@ -22,7 +22,7 @@ const PdfHighlight = (props) => {
     emphasized,
     pageNumber,
     onClickHighlight,
-  } = props;
+  } = props
   return (
     highlight.selectors &&
     highlight.selectors.pdfRectangles.map(rectangle => (
@@ -40,15 +40,16 @@ const PdfHighlight = (props) => {
                 height: `${rectangle.height * 100}%`,
                 width: `${rectangle.width * 100}%`,
               }}
-        onClick={onClickHighlight({ highlight, pageNumber })}
+        // onClick={onClickHighlight({ highlight, pageNumber })}
+        // onMouseOver={onClickHighlight({ highlight, pageNumber })}
       />
     ))
-  );
-};
+  )
+}
 
 
-PdfHighlight.propTypes = propTypes;
+PdfHighlight.propTypes = propTypes
 
-PdfHighlight.defaultProps = defaultProps;
+PdfHighlight.defaultProps = defaultProps
 
-export default PdfHighlight;
+export default PdfHighlight

@@ -9,7 +9,7 @@ const fs = require('fs')
 const lessToJs = require('less-vars-to-js')
 
 const themeVariables = lessToJs(fs.readFileSync(path.join(__dirname, './src/utils/ant-theme-vars.less'), 'utf8'))
-themeVariables['@icon-url'] = "'http://localhost:3000/fonts/iconfont'"
+themeVariables['@icon-url'] = process.env.NODE_ENV === 'production' ? '/fonts/iconfont' : 'http://localhost:3000/fonts/iconfont'
 
 const {
   addPlugins, createConfig, entryPoint, env, setOutput,

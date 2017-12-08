@@ -40,12 +40,12 @@ class PdfPopup extends PureComponent {
         <div className="xs-popup-content">
           <div className="xs-popup-button">
             <span>
-              <button onClick={onSaveHighlight}>
+              <button onMouseDown={onSaveHighlight}>
                 <Icon type="star-o" />
               </button>
             </span>
             <span>
-              <button onClick={commentOnHighlight}>
+              <button onMouseDown={commentOnHighlight}>
                 <Icon type="edit" />
               </button>
             </span>

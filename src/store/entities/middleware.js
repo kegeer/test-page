@@ -10,9 +10,11 @@ const middleware = store => next => (action) => {
 
     if (schema) {
       // const pl = payload[meta.entities]
+      // console.log(payload, 'payload')
+      // console.log(typeof payload, 'payload type')
       const { result, entities } = normalize(payload, Array.isArray(payload) ? [schema] : schema)
-      console.log('normalize result', result)
-      console.log('normalize entities', entities)
+      // console.log('normalize result', result)
+      // console.log('normalize entities', entities)
       store.dispatch(entitiesReceive(entities))
       return next({ ...action, payload: result })
     }

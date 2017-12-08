@@ -3,7 +3,9 @@ import PropTypes from 'prop-types'
 import { PdfReader } from 'components'
 
 const propTypes = {
+  filename: PropTypes.string,
   pdf: PropTypes.any.isRequired,
+  annotations: PropTypes.arrayOf(PropTypes.any),
 }
 
 class PaperViewer extends Component {
@@ -14,6 +16,7 @@ class PaperViewer extends Component {
     }
   }
   componentDidMount() {
+    console.log(this.props.annotations, 'viewer')
     this.getFile()
   }
 
@@ -31,10 +34,12 @@ class PaperViewer extends Component {
 
   render() {
     const { file } = this.state
+    const { annotations} = this.props
     // const { pdf } = this.props
     return file &&
       (<PdfReader
         file={file}
+        annotations={annotations}
         renderType="canvas"
         scale={1.5}
       />)

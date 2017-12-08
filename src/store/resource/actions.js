@@ -39,12 +39,22 @@ export const resourceCreateFailure = (resource, error, request, thunk) => ({
 })
 
 export const RESOURCE_LIST_READ_REQUEST = 'RESOURCE_LIST_READ_REQUEST'
+export const RESOURCE_SUB_LIST_READ_REQUEST = 'RESOURCE_SUB_LIST_READ_REQUEST'
 export const RESOURCE_LIST_READ_SUCCESS = 'RESOURCE_LIST_READ_SUCCESS'
 export const RESOURCE_LIST_READ_FAILURE = 'RESOURCE_LIST_READ_FAILURE'
 
 export const resourceListReadRequest = (resource, params) => ({
   type: RESOURCE_LIST_READ_REQUEST,
   payload: { params },
+  meta: {
+    resource,
+    thunk: `${resource}ListRead`,
+  },
+})
+
+export const resourceSubListReadRequest = (resource, needle, params) => ({
+  type: RESOURCE_SUB_LIST_READ_REQUEST,
+  payload: { needle, params },
   meta: {
     resource,
     thunk: `${resource}ListRead`,
@@ -93,7 +103,7 @@ export const resourceDetailReadSuccess = (resource, detail, request, thunk) => (
     request,
     thunk,
     resource,
-    entities: resource,
+    // entities: resource,
   },
 })
 

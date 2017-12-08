@@ -31,7 +31,7 @@ class PDFReader extends Component {
       currentPage,
       scale,
       thumbnailsViewOpen: true,
-      showSideToolbar: false,
+      numPages: 0,
     }
   }
 
@@ -45,6 +45,7 @@ class PDFReader extends Component {
   onDocumentLoad = (pdf) => {
     this.setState({
       pdf,
+      numPages: pdf.numPages
     })
     this.loadFirstPage()
   };
@@ -79,8 +80,8 @@ class PDFReader extends Component {
   }
 
   scrollToPage = (pageIndex) => {
+    // console.log(pageIndex, 'pageIndex')
     const page = document.getElementById(`pdf-page-${pageIndex}`)
-    console.log(page, 'page')
 
     const context = document.querySelector('.pdf-viewer')
     Velocity(page, 'scroll', {
@@ -164,6 +165,7 @@ class PDFReader extends Component {
       btnFitWidth,
       pageCountLabel,
       renderType,
+      annotations,
     } = this.props
 
     return (
@@ -183,7 +185,7 @@ class PDFReader extends Component {
                   onSelect={this.scrollToPage}
                 />
               </Col>
-              <Col span={15}>
+              <Col span={20}>
                 <Viewer
                   pages={pages}
                   onPageChange={this.changePage}
@@ -191,6 +193,8 @@ class PDFReader extends Component {
                   rotate={rotate}
                   width={width}
                   renderType={renderType}
+                  annotations={annotations}
+                  numPages={this.state.numPages}
                 />
                 <ToolsBar
                   btnToggle={btnToggle}
@@ -206,9 +210,6 @@ class PDFReader extends Component {
                   numPages={pdf.numPages}
                   pageCountLabel={pageCountLabel}
                 />
-              </Col>
-              <Col span={5}>
-                <h1>Discuss</h1>
               </Col>
             </Row>)
         }
@@ -252,6 +253,7 @@ PDFReader.defaultProps = {
 }
 
 PDFReader.propTypes = {
+  annotations: PropTypes.arrayOf(PropTypes.any),
   file: PropTypes.any,
   rotate: PropTypes.number,
   renderType: PropTypes.string,

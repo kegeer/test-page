@@ -1,38 +1,38 @@
-import React, { Component } from 'react';
-import PropTypes from 'prop-types';
-import 'pdfjs-dist/build/pdf.combined';
-import 'waypoints/lib/noframework.waypoints';
-import 'waypoints/lib/shortcuts/inview';
-import { getPixelRatio, getViewerport } from '../lib/Viewport';
-import PdfHighlight from './PdfHighlight';
-import PdfPopup from './PdfPopup';
-import LinkService from './LinkService';
+import React, { Component } from 'react'
+import PropTypes from 'prop-types'
+import 'pdfjs-dist/build/pdf.combined'
+import 'waypoints/lib/noframework.waypoints'
+import 'waypoints/lib/shortcuts/inview'
+import { getPixelRatio, getViewerport } from '../lib/Viewport'
+import PdfHighlight from './PdfHighlight'
+import PdfPopup from './PdfPopup'
+import LinkService from './LinkService'
 
 
-const { PDFJS, Waypoint } = window;
+const { PDFJS, Waypoint } = window
 
 class Page extends Component {
   constructor(props) {
-    super(props);
+    super(props)
     this.state = {
       scale: props.scale,
       isInview: false,
       scaleChange: false,
       emphasizedHighlights: [],
-    };
-    this.linkService = new LinkService(this.onLinkDestinationCreate, this.scrollToAnchor);
+    }
+    this.linkService = new LinkService(this.onLinkDestinationCreate, this.scrollToAnchor)
 
-    this.renderPageSVG = this.renderPageSVG.bind(this);
-    this.renderPageCanvas = this.renderPageCanvas.bind(this);
-    this.renderTextLayer = this.renderTextLayer.bind(this);
-    this.onHighlightClick = this.onHighlightClick.bind(this);
-    this.renderAnnotationsLayer = this.renderAnnotationsLayer.bind(this);
-    this.onLinkDestinationCreate = this.onLinkDestinationCreate.bind(this);
-    this.scrollToAnchor = this.scrollToAnchor.bind(this);
+    this.renderPageSVG = this.renderPageSVG.bind(this)
+    this.renderPageCanvas = this.renderPageCanvas.bind(this)
+    this.renderTextLayer = this.renderTextLayer.bind(this)
+    this.onHighlightClick = this.onHighlightClick.bind(this)
+    this.renderAnnotationsLayer = this.renderAnnotationsLayer.bind(this)
+    this.onLinkDestinationCreate = this.onLinkDestinationCreate.bind(this)
+    this.scrollToAnchor = this.scrollToAnchor.bind(this)
   }
 
   componentDidMount() {
-    this.initPage();
+    this.initPage()
     // console.log(this._textLayerDiv[0], 'hatext')
     // this._textLayerDiv.addEventListener('mouseup', this.onMouseUp)
   }
@@ -40,8 +40,11 @@ class Page extends Component {
   componentWillReceiveProps(nextProps) {
     if (nextProps.scale !== this.state.scale) {
       this.setState({ scale: nextProps.scale }, () => {
-        this.updatePage(nextProps.scale);
-      });
+        this.updatePage(nextProps.scale)
+      })
+    }
+    if (nextProps.selectors !== this.props.selectors) {
+      this.props.clearTempHighlightsByPage()
     }
   }
 
@@ -53,20 +56,20 @@ class Page extends Component {
   //   console.log(highlight, 'mouse leave highlight')
   // }
   onHighlightClick({ highlight, pageNumber }) {
-    console.log(highlight, 'click highlight');
-    console.log(pageNumber, 'click highlight pageNumber');
+    // console.log(highlight, 'click highlight')
+    // console.log(pageNumber, 'click highlight pageNumber')
   }
 
 
   onLinkDestinationCreate() {}
 
   getViewport = () => {
-    const { page } = this.props;
-    const { scale } = this.state;
-    const rotate = this.props.rotate || 0;
-    const canvas = this._canvas;
+    const { page } = this.props
+    const { scale } = this.state
+    const rotate = this.props.rotate || 0
+    const canvas = this._canvas
 
-    return getViewerport(page, scale, rotate, canvas);
+    return getViewerport(page, scale, rotate, canvas)
   }
   // TODO 所有导航链接可以通过prop导入，在本页不太可能完成所有功能
   async scrollToAnchor(anchor) {
@@ -112,13 +115,13 @@ class Page extends Component {
   // }
 
   refreshWaypoints = () => {
-    Waypoint.refreshAll();
+    Waypoint.refreshAll()
   }
 
 
   initWaypoint = (pageHeight) => {
-    const { page, onVisibleOnViewport } = this.props;
-    const context = document.querySelector('.pdf-viewer');
+    const { page, onVisibleOnViewport } = this.props
+    const context = document.querySelector('.pdf-viewer')
     this.waypoints = [
       new Waypoint({
         offset: pageHeight / 4,
@@ -126,7 +129,7 @@ class Page extends Component {
         context,
         handler: (direction) => {
           if (direction === 'down') {
-            onVisibleOnViewport(page.pageIndex);
+            onVisibleOnViewport(page.pageIndex)
           }
         },
       }),
@@ -137,7 +140,7 @@ class Page extends Component {
         context,
         handler: (direction) => {
           if (direction === 'up') {
-            onVisibleOnViewport(page.pageIndex);
+            onVisibleOnViewport(page.pageIndex)
           }
         },
       }),
@@ -148,156 +151,156 @@ class Page extends Component {
         enter: () => {
           this.setState({ isInview: true }, () => {
             if (!this.pageRendered) {
-              this.renderPage();
+              this.renderPage()
             } else if (this.state.scaleChange) {
               this.setState({ scaleChange: false }, () => {
-                this.renderPage();
-              });
+                this.renderPage()
+              })
             }
-          });
+          })
         },
         exited: () => {
-          this.setState({ isInview: false });
+          this.setState({ isInview: false })
         },
       }),
-    ];
+    ]
   };
   roundSize = (size) => {
     return {
       height: Math.floor(size.height),
       width: Math.floor(size.width),
-    };
+    }
   }
 
   cleanPage = () => {
     if (this.props.renderType === 'svg') {
-      this._svg.innerHTML = '';
+      this._svg.innerHTML = ''
     } else {
-      const ctx = this._canvas.getContext('2d');
-      ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
+      const ctx = this._canvas.getContext('2d')
+      ctx.clearRect(0, 0, this._canvas.width, this._canvas.height)
     }
   }
 
   initPage = () => {
-    const { viewport, viewportDefaultRatio } = this.getViewport();
-    this.renderPagePlaceholder(viewportDefaultRatio);
-    this.initWaypoint(viewport.height);
+    const { viewport, viewportDefaultRatio } = this.getViewport()
+    this.renderPagePlaceholder(viewportDefaultRatio)
+    this.initWaypoint(viewport.height)
   };
 
   updatePage = () => {
-    this.renderPagePlaceholder(this.getViewport().viewportDefaultRatio);
-    this.refreshWaypoints();
-    this.cleanPage();
+    this.renderPagePlaceholder(this.getViewport().viewportDefaultRatio)
+    this.refreshWaypoints()
+    this.cleanPage()
     if (this.state.isInview) {
-      this.renderPage();
+      this.renderPage()
     } else {
-      this.setState({ scaleChange: true });
+      this.setState({ scaleChange: true })
     }
   }
 
 
   renderPage = () => {
-    const { page, renderType } = this.props;
-    const viewports = this.getViewport();
-    const pixelRatio = getPixelRatio(this._canvas);
-    console.log(pixelRatio, 'pixelRatio');
+    const { page, renderType } = this.props
+    const viewports = this.getViewport()
+    const pixelRatio = getPixelRatio(this._canvas)
+    // console.log(pixelRatio, 'pixelRatio')
 
-    this.renderPagePlaceholder(viewports.viewportDefaultRatio);
+    this.renderPagePlaceholder(viewports.viewportDefaultRatio)
     if (renderType === 'svg') {
-      this.renderPageSVG(page, pixelRatio, viewports);
+      this.renderPageSVG(page, pixelRatio, viewports)
     } else {
-      this.renderPageCanvas(page, pixelRatio, viewports);
+      this.renderPageCanvas(page, pixelRatio, viewports)
     }
 
-    this.renderTextLayer(page, viewports.viewportDefaultRatio);
+    this.renderTextLayer(page, viewports.viewportDefaultRatio)
     // this.renderAnnotationsLayer(page, pixelRatio, viewports);
 
-    this.pageRendered = true;
+    this.pageRendered = true
   };
 
   renderPagePlaceholder = (viewportDefaultRatio) => {
-    this._page.style.width = `${viewportDefaultRatio.width}px`;
-    this._page.style.height = `${viewportDefaultRatio.height}px`;
+    this._page.style.width = `${viewportDefaultRatio.width}px`
+    this._page.style.height = `${viewportDefaultRatio.height}px`
   };
 
   async renderPageSVG(page, pixelRatio, { viewportDefaultRatio }) {
-    this._svg.style.width = `${viewportDefaultRatio.width}px`;
-    this._svg.style.height = `${viewportDefaultRatio.height}px`;
+    this._svg.style.width = `${viewportDefaultRatio.width}px`
+    this._svg.style.height = `${viewportDefaultRatio.height}px`
 
     // SVG rendering by PDF.js
     await page.getOperatorList()
       .then((opList) => {
-        const svgGfx = new PDFJS.SVGGraphics(page.commonObjs, page.objs);
-        return svgGfx.getSVG(opList, viewportDefaultRatio);
+        const svgGfx = new PDFJS.SVGGraphics(page.commonObjs, page.objs)
+        return svgGfx.getSVG(opList, viewportDefaultRatio)
       })
       .then((svg) => {
-        this._svg.innerHTML = '';
-        this._svg.appendChild(svg);
-      });
+        this._svg.innerHTML = ''
+        this._svg.appendChild(svg)
+      })
   }
 
 
   async renderPageCanvas(page, pixelRatio, { viewport }) {
-    const size = this.roundSize(viewport);
-    this._canvas.height = Math.round(size.height * pixelRatio);
-    this._canvas.width = Math.round(size.width * pixelRatio);
-    this._canvas.style.height = `${size.height / pixelRatio}px`;
-    this._canvas.style.width = `${size.width / pixelRatio}px`;
+    const size = this.roundSize(viewport)
+    this._canvas.height = Math.round(size.height * pixelRatio)
+    this._canvas.width = Math.round(size.width * pixelRatio)
+    this._canvas.style.height = `${size.height / pixelRatio}px`
+    this._canvas.style.width = `${size.width / pixelRatio}px`
 
-    const canvasContext = this._canvas.getContext('2d');
-    canvasContext.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+    const canvasContext = this._canvas.getContext('2d')
+    canvasContext.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0)
     const renderContext = {
       canvasContext,
       viewport,
-    };
-
-    if (this.pageRender && this.pageRender._internalRenderTask.running) {
-      this.pageRender._internalRenderTask.cancel();
     }
 
-    this.pageRender = await page.render(renderContext);
+    if (this.pageRender && this.pageRender._internalRenderTask.running) {
+      this.pageRender._internalRenderTask.cancel()
+    }
+
+    this.pageRender = await page.render(renderContext)
   }
 
   async renderTextLayer(page, viewportDefaultRatio) {
     if (!this._textContent) {
-      this._textContent = await page.getTextContent();
+      this._textContent = await page.getTextContent()
     }
-    this._textContent.innerHTML = '';
+    this._textContent.innerHTML = ''
     this._textLayer = PDFJS.renderTextLayer({
       container: this._textLayerDiv,
       textContent: this._textContent,
       viewport: viewportDefaultRatio,
       enhanceTextSelection: true,
-    });
+    })
 
-    await this._textLayer;
-    this._textLayer.expandTextDivs(true);
-    this._textLayerDiv.normalize();
+    await this._textLayer
+    this._textLayer.expandTextDivs(true)
+    this._textLayerDiv.normalize()
   }
 
   async renderAnnotationsLayer(page, pixelRatio, { viewport }) {
-    const _viewport = viewport.clone({ dontFlip: true });
+    const _viewport = viewport.clone({ dontFlip: true })
     // _viewport.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
     if (!this._annotations) {
-      this.annotations = await page.getAnnotations();
+      this.annotations = await page.getAnnotations()
     }
-    this._annotationsLayer.innerHTML = '';
+    this._annotationsLayer.innerHTML = ''
     await PDFJS.AnnotationLayer.render({
       annotations: this.annotations,
       div: this._annotationsLayer,
       linkService: this.linkService,
       page,
       viewport: _viewport,
-    });
+    })
   }
 
   render() {
     const {
-      page, renderType, highlights, popupTarget, onSaveHighlight, commentOnHighlight,
-    } = this.props;
+      page, renderType, highlights, popupTarget, onSaveHighlight, commentOnHighlight, tempHighlightsByPage,
+    } = this.props
     // console.log(highlights, 'page hgs');
     // const { emphasizedHighlights } = this.state
-    const pageNumber = page.pageIndex + 1;
+    const pageNumber = page.pageIndex + 1
     return (
       <div
         ref={div => (this._page = div)}
@@ -333,6 +336,16 @@ class Page extends Component {
               />
             ))
           }
+          {
+            tempHighlightsByPage && tempHighlightsByPage.map(highlight => (
+              <PdfHighlight
+                key={`${pageNumber}_${Math.random()}_${new Date().getTime()}`}
+                highlight={highlight}
+                pageNumber={pageNumber}
+                onClickHighlight={this.onHighlightClick}
+              />
+            ))
+          }
         </div>
         {
           popupTarget &&
@@ -340,20 +353,23 @@ class Page extends Component {
           <PdfPopup target={popupTarget} pageNumber={pageNumber} onSaveHighlight={onSaveHighlight} commentOnHighlight={commentOnHighlight} />
         }
       </div>
-    );
+    )
   }
 }
 
 Page.propTypes = {
   scale: PropTypes.number.isRequired,
+  selectors: PropTypes.object,
   renderType: PropTypes.string.isRequired,
   page: PropTypes.object.isRequired,
   onVisibleOnViewport: PropTypes.func.isRequired,
   rotate: PropTypes.number.isRequired,
   highlights: PropTypes.array,
+  tempHighlightsByPage: PropTypes.array,
   popupTarget: PropTypes.any,
   onSaveHighlight: PropTypes.func.isRequired,
   commentOnHighlight: PropTypes.func.isRequired,
-};
+  clearTempHighlightsByPage: PropTypes.func.isRequired,
+}
 
-export default Page;
+export default Page

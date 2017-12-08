@@ -13,19 +13,18 @@ const devtools = isDev && isBrowser && window.devToolsExtension
 
 const configureStore = (initialState, services = {}) => {
   const sagaMiddleware = createSagaMiddleware()
-  
+  // const logger = isDev ? createLogger() : null
   const enhancers = [
     applyMiddleware(
       ...middlewares,
-      sagaMiddleware,
-      createLogger()
+      sagaMiddleware
     ),
     devtools(),
   ]
-  
+
   const store = createStore(reducer, initialState, compose(...enhancers))
   let sagaTask = sagaMiddleware.run(sagas, services)
-  
+
   if (module.hot) {
     module.hot.accept('./reducer', () => {
       const nextReducer = require('./reducer').default
@@ -39,7 +38,7 @@ const configureStore = (initialState, services = {}) => {
       })
     })
   }
-  
+
   return store
 }
 
